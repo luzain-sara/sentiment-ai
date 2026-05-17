@@ -3,6 +3,7 @@ from flask_cors import CORS
 import pickle
 import re
 import nltk
+import os
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
@@ -20,14 +21,12 @@ with open('vectorizer.pkl', 'rb') as f:
 port_stem = PorterStemmer()
 
 def preprocess(text):
-    # Same pipeline as your Colab training code
-    text = re.sub('[^a-zA-Z]', ' ', text)   # remove special chars & numbers
+    text = re.sub('[^a-zA-Z]', ' ', text)
     text = text.lower()
     text = text.split()
     text = [port_stem.stem(word) for word in text if word not in stopwords.words('english')]
     return ' '.join(text)
 
-# Sentiment140: 0 = negative, 1 = positive
 label_map = {0: 'negative', 1: 'positive', '0': 'negative', '1': 'positive'}
 
 @app.route('/')
@@ -52,7 +51,7 @@ def predict():
         probabilities = {label_map.get(cls, str(cls)): float(p) for cls, p in zip(classes, proba)}
         confidence = float(max(proba))
     except:
-        probabilities = {label_map.get(prediction, str(prediction)): 1.0}
+        probabilities = {str(prediction): 1.0}
         confidence = 1.0
 
     return jsonify({
@@ -62,4 +61,5 @@ def predict():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
